@@ -19,8 +19,6 @@ function visit_url($url, $proxy = FALSE) {
     curl_setopt($curl, CURLOPT_HEADER, TRUE);
 
     if ($proxy) {
-
-
       curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
       curl_setopt($curl, CURLOPT_PROXY, $proxy);
     }
@@ -36,45 +34,6 @@ function visit_url($url, $proxy = FALSE) {
   }
   $result['httpcode'] = $status;
   $result['url'] = $url;
-
-  return $result;
-}
-
-function visit($url, &$result = NULL) {
-  $agent = "Mozilla/4.0 (compatible; MSIE 5.01; Windows NT 5.0)";
-  $curl = curl_init();
-  curl_setopt($curl, CURLOPT_URL, $url);
-  curl_setopt($curl, CURLOPT_USERAGENT, $agent);
-  curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-//  curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
-//  curl_setopt($curl, CURLOPT_PROXY, '10.23.12.100:8080');
-
-  curl_setopt($curl, CURLOPT_FOLLOWLOCATION, FALSE);
-  curl_setopt($curl, CURLOPT_VERBOSE, FALSE);
-  curl_setopt($curl, CURLOPT_TIMEOUT, 3);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-  curl_setopt($curl, CURLOPT_SSLVERSION, 3);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-
-  session_write_close();
-
-  $page = curl_exec($curl);
-  $error = curl_error($curl);
-  $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-  $curl_info = curl_getinfo($curl);
-  print_r_clean($curl_info);
-
-  curl_close($curl);
-
-  $actual_url = 'testing';
-
-  $result = array(
-//    'page' => $page,
-    'error' => $error,
-    'httpcode' => $httpcode,
-    'actual' => $actual_url,
-  );
 
   return $result;
 }
@@ -97,6 +56,8 @@ function visit($url, &$result = NULL) {
     <?php if (!array_key_exists('csv', $_FILES)) : ?>
 
     <form method="post" action="index.php" enctype="multipart/form-data">
+      <label for="proxy">Proxy</label>
+      <input type="text" name="proxy" />
       <label for="csv">Upload a CSV file</label>
       <input type="file" name="csv" class="input-medium" />
       <input type="submit" class="btn" />
@@ -108,9 +69,9 @@ function visit($url, &$result = NULL) {
 
     $results = $successes = $failures = array();
 
-    $count_200 = $count_301 = 0;
+    $count_200 = $count_301 = $count_404 = 0;
 
-    $proxy = '10.23.12.100:8080';
+    $proxy = $_POST['proxy'];
 
     while ($row = fgetcsv($file)) {
       $original_url = $row[0];
@@ -139,6 +100,9 @@ function visit($url, &$result = NULL) {
             $count_301++;
             $actual_url = $visit['target'];
             break;
+          case '404':
+            $count_404++;
+            break;
         }
 
         $result['actual'] = $actual_url;
@@ -162,18 +126,19 @@ function visit($url, &$result = NULL) {
     $failure_count = count($failures);
     ?>
     <?php if ($result_count) : ?>
-      <table>
+      <table class="table table-striped table-bordered">
         <caption>Summary</caption>
         <thead>
         <tr>
           <th>URLs checked</th>
           <th>200</th>
           <th>301</th>
+          <th>404</th>
           <?php if ($success_count) : ?>
           <th>Successes</th>
           <?php endif; ?>
           <?php if ($failure_count): ?>
-          <th>Failures</th>
+          <th>Errors</th>
           <?php endif; ?>
         </tr>
         </thead>
@@ -182,6 +147,7 @@ function visit($url, &$result = NULL) {
           <td><?php print $result_count; ?></td>
           <td><?php print $count_200; ?></td>
           <td><?php print $count_301; ?></td>
+          <td><?php print $count_404; ?></td>
           <?php if ($success_count) : ?>
           <td><?php print $success_count; ?></td>
           <?php endif; ?>
@@ -192,8 +158,9 @@ function visit($url, &$result = NULL) {
         </tbody>
       </table>
       <?php endif; ?>
+    <a href="index.php">Start again</a>
     <?php if ($failure_count): ?>
-      <table>
+      <table class="table table-striped table-bordered">
         <caption>Errors</caption>
         <thead>
         <th>Original URL</th>
@@ -213,7 +180,28 @@ function visit($url, &$result = NULL) {
         </tbody>
       </table>
       <?php endif; ?>
-    <a href="index.php">Start again</a>
+    <?php if ($success_count): ?>
+      <table class="table table-striped table-bordered">
+        <caption>Successes</caption>
+        <thead>
+        <th>Original URL</th>
+        <th>Expected URL</th>
+        <th>HTTP response</th>
+        <th>Actual URL</th>
+        </thead>
+        <tbody>
+          <?php foreach ($successes as $success): ?>
+        <tr>
+          <td><?php print $success['original']; ?></td>
+          <td><?php print $success['expected']; ?></td>
+          <td><?php print $success['httpcode']; ?></td>
+          <td><?php print $success['actual']; ?></td>
+        </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+      <?php endif; ?>
+
     <?php endif; ?>
   </div>
 </div>
