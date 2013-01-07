@@ -104,6 +104,16 @@ function visit_url($url, $proxy = FALSE) {
             $count_404++;
             break;
         }
+        
+        // deal with multiple redirections
+        while ($visit['httpcode'] == '301') {
+          if ($visit['target'] == $actual_url) {
+            break;
+          }
+
+          $visit = visit_url($actual_url, $proxy);
+          $actual_url = $visit['target'];
+        }
 
         $result['actual'] = $actual_url;
 
