@@ -17,9 +17,9 @@ function visit_url($url, $proxy = FALSE) {
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($curl, CURLOPT_NOBODY, TRUE);
     curl_setopt($curl, CURLOPT_HEADER, TRUE);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 10););
 
     if ($proxy) {
-      curl_setopt($curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
       curl_setopt($curl, CURLOPT_PROXY, $proxy);
     }
     $response = @curl_exec($curl);
