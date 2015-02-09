@@ -78,19 +78,16 @@ $form = '<form method="post" action="index.php" enctype="multipart/form-data">
 
 ?>
 <html>
-<head>
-  <title>URL Redirection Tester</title>
-  <link
-    href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css"
-    rel="stylesheet">
-  <link
-    href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css"
-    rel="stylesheet">
-</head>
-<body>
-<div class="row">
-  <div class="span8 offset2">
+  <head>
+    <title>URL Redirection Tester</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+  </head>
+  <body>
+<div class="container">
+
     <h1>Redirection checker</h1>
+
 <?php
 
 if (!array_key_exists('csv', $_FILES)) {
@@ -176,71 +173,87 @@ else {
   ?>
 
   <?php if ($result_count) : ?>
-        <table class="table table-striped table-bordered">
-          <caption>Summary</caption>
-          <thead>
-          <tr>
-            <th>URLs checked</th>
-            <th><?php print HTTP_STATUS_OK; ?></th>
-            <th><?php print HTTP_STATUS_MOVED_PERMANENTLY; ?></th>
-            <th><?php print HTTP_STATUS_NOT_FOUND; ?></th>
-            <?php if ($success_count) : ?>
-              <th>Successes</th>
-            <?php endif; ?>
-            <?php if ($failure_count): ?>
-              <th>Errors</th>
-            <?php endif; ?>
-          </tr>
-          </thead>
-          <tbody>
-          <tr>
-            <td><?php print $result_count; ?></td>
-            <td><?php print $count_200; ?></td>
-            <td><?php print $count_301; ?></td>
-            <td><?php print $count_404; ?></td>
-            <?php if ($success_count) : ?>
-              <td>
-                <a href="#success">
-                  <?php print $success_count; ?>
-                </a>
-              </td>
-            <?php endif; ?>
-            <?php if ($failure_count): ?>
-              <td>
-                <a href="#failure">
-                  <?php print $failure_count; ?>
-                </a>
-              </td>
-            <?php endif; ?>
-          </tr>
-          </tbody>
-        </table>
-      <?php endif; ?>
-      <a href="index.php" class="btn">Start again</a>
-      <?php if ($failure_count): ?>
-        <table id="failure" class="table table-striped table-bordered">
-          <caption>Errors</caption>
-          <thead>
-          <th>Original URL</th>
-          <th>Expected URL</th>
-          <th>HTTP response</th>
-          <th>Actual URL</th>
-          </thead>
-          <tbody>
-          <?php foreach ($failures as $failure): ?>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Summary</h3>
+          </div>
+          <table class="table table-striped table-bordered">
+            <thead>
             <tr>
-              <td><?php print $failure['original']; ?></td>
-              <td><?php print $failure['expected']; ?></td>
-              <td><?php print $failure['httpcode']; ?></td>
-              <td><?php print $failure['actual']; ?></td>
+              <th>URLs checked</th>
+              <th><?php print HTTP_STATUS_OK; ?></th>
+              <th><?php print HTTP_STATUS_MOVED_PERMANENTLY; ?></th>
+              <th><?php print HTTP_STATUS_NOT_FOUND; ?></th>
+              <?php if ($success_count) : ?>
+                <th>Successes</th>
+              <?php endif; ?>
+              <?php if ($failure_count): ?>
+                <th>Errors</th>
+              <?php endif; ?>
             </tr>
-          <?php endforeach; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+            <tr>
+              <td><?php print $result_count; ?></td>
+              <td><?php print $count_200; ?></td>
+              <td><?php print $count_301; ?></td>
+              <td><?php print $count_404; ?></td>
+              <?php if ($success_count) : ?>
+                <td>
+                  <a href="#success">
+                    <?php print $success_count; ?>
+                  </a>
+                </td>
+              <?php endif; ?>
+              <?php if ($failure_count): ?>
+                <td>
+                  <a href="#failure">
+                    <?php print $failure_count; ?>
+                  </a>
+                </td>
+              <?php endif; ?>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    <p>
+      <a href="index.php" class="btn btn-success">Start again</a>
+    </p>
+
+      <?php if ($failure_count): ?>
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Errors</h3>
+          </div>
+          <table id="failure" class="table table-striped table-bordered">
+            <thead>
+            <th>Original URL</th>
+            <th>Expected URL</th>
+            <th>HTTP response</th>
+            <th>Actual URL</th>
+            </thead>
+            <tbody>
+            <?php foreach ($failures as $failure): ?>
+              <tr>
+                <td><?php print $failure['original']; ?></td>
+                <td><?php print $failure['expected']; ?></td>
+                <td><?php print $failure['httpcode']; ?></td>
+                <td><?php print $failure['actual']; ?></td>
+              </tr>
+               <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+
       <?php endif; ?>
       <?php if ($success_count): ?>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Successes</h3>
+        </div>
         <table id="success" class="table table-striped table-bordered">
-          <caption>Successes</caption>
+
           <thead>
           <th>Original URL</th>
           <th>Expected URL</th>
@@ -258,11 +271,12 @@ else {
           <?php endforeach; ?>
           </tbody>
         </table>
+        </div>
+
       <?php
   endif;
 }
 ?>
-  </div>
-</div>
-</body>
+    </div>
+  </body>
 </html>
