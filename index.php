@@ -67,11 +67,33 @@ function visit_url($curl, $url, $proxy = FALSE) {
   return $result;
 }
 
+/**
+ * Sets the environment to URL.
+ * @param $url
+ * @param null $environment
+ */
+function set_environment_url($url, $environment = NULL) {
+  // @TODO: replace domains as form input.
+  if (strpos($url, 'www.royalmail') !== FALSE) {
+    $url = str_replace('www.royalmail', "www$environment.royalmail", $url);
+  }
+  return $url;
+}
+
 $form = '<form method="post" action="index.php" enctype="multipart/form-data">
+        <p><label for="env">Environment</label>
+        <select name="env">
+            <option value="qa">QA</option>
+            <option value="qt">QT</option>
+            <option value="preprod">Pre-Prod</option>
+            <option value="">prod</option>
+        </select>
+        </p>
+        <p>
         <label for="proxy">Proxy</label>
-        <input type="text" name="proxy" value=""/>
-        <label for="csv">Upload a CSV file</label>
-        <input type="file" name="csv" class="input-medium"/>
+        <input type="text" name="proxy" value=""/></p>
+
+        <p><label for="csv">Upload a CSV file</label><input type="file" name="csv" class="input-medium"/></p>
         <input type="submit" class="btn"/>
       </form>';
 
@@ -89,7 +111,6 @@ $form = '<form method="post" action="index.php" enctype="multipart/form-data">
     <h1>Redirection checker</h1>
 
 <?php
-
 if (!array_key_exists('csv', $_FILES)) {
   print $form;
 }
@@ -102,10 +123,11 @@ else {
   $count_200 = $count_301 = $count_404 = 0;
 
   $proxy = $_POST['proxy'];
+  $environment = $_POST['env'];
   $curl = setup_curl($proxy);
   while ($row = fgetcsv($file)) {
-    $original_url = $row[0];
-    $expected_url = $row[1];
+    $original_url = set_environment_url($row[0], $environment);
+    $expected_url = set_environment_url($row[1], $environment);
 
     $parsed_original = parse_url($original_url);
     $parsed_expected = parse_url($expected_url);
