@@ -68,11 +68,20 @@ function visit_url($curl, $url, $proxy = FALSE) {
 }
 
 $form = '<form method="post" action="index.php" enctype="multipart/form-data">
-        <label for="proxy">Proxy</label>
-        <input type="text" name="proxy" value=""/>
-        <label for="csv">Upload a CSV file</label>
-        <input type="file" name="csv" class="input-medium"/>
+<div class="panel panel-default">
+  <div class="panel-body">
+  <div class="form-group">
+          <label for="proxy">Proxy</label>
+          <input type="text" name="proxy" value=""/>
+</div>
+<div class="form-group">
+          <label for="csv">Upload a CSV file</label>
+          <input type="file" name="csv" class="input-medium"/>
+          </div>
+
         <input type="submit" class="btn"/>
+</div>
+</div>
       </form>';
 
 
