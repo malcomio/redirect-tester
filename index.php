@@ -122,7 +122,7 @@ if (!empty($_POST['csv_output'])) {
 }
 
 
-$form = '<form method="post" action="index.php" enctype="multipart/form-data">
+$form = '<form method="post" enctype="multipart/form-data">
 <div class="panel panel-default">
   <div class="panel-body">
   <div class="form-group">
