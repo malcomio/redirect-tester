@@ -160,7 +160,7 @@ else {
 
   $file = fopen($_FILES['csv_input']['tmp_name'], 'r');
 
-  $results = $output_array = $successes = $failures = array();
+  $results = $successes = $failures = array();
 
   $count_200 = $count_301 = $count_404 = 0;
 
