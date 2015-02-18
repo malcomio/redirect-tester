@@ -67,6 +67,61 @@ function visit_url($curl, $url, $proxy = FALSE) {
   return $result;
 }
 
+/**
+ * Convert an array to CSV output.
+ *
+ * @param array $array
+ * @return null|string
+ */
+function array2csv(array &$array) {
+  if (count($array) == 0) {
+    return NULL;
+  }
+  ob_start();
+  $df = fopen("php://output", 'w');
+  fputcsv($df, array_keys(reset($array)));
+  foreach ($array as $row) {
+    fputcsv($df, $row);
+  }
+  fclose($df);
+  return ob_get_clean();
+}
+
+/**
+ * Output headers for a filename.
+ * @param $filename
+ */
+function download_send_headers($filename) {
+  // disable caching
+  $now = gmdate("D, d M Y H:i:s");
+  header("Expires: Tue, 03 Jul 2001 06:00:00 GMT");
+  header("Cache-Control: max-age=0, no-cache, must-revalidate, proxy-revalidate");
+  header("Last-Modified: {$now} GMT");
+
+  // force download
+  header("Content-Type: application/force-download");
+  header("Content-Type: application/octet-stream");
+  header("Content-Type: application/download");
+
+  // disposition / encoding on response body
+  header("Content-Disposition: attachment;filename={$filename}");
+  header("Content-Transfer-Encoding: binary");
+}
+
+
+/**
+ * Output the results as a CSV.
+ */
+if (!empty($_POST['csv_output'])) {
+
+  $results = unserialize($_POST['results']);
+
+  download_send_headers("redirect-test-results_" . date("Y-m-d") . ".csv");
+  echo array2csv($results);
+  die();
+}
+
+
 $form = '<form method="post" action="index.php" enctype="multipart/form-data">
 <div class="panel panel-default">
   <div class="panel-body">
@@ -75,8 +130,8 @@ $form = '<form method="post" action="index.php" enctype="multipart/form-data">
           <input type="text" name="proxy" value=""/>
 </div>
 <div class="form-group">
-          <label for="csv">Upload a CSV file</label>
-          <input type="file" name="csv" class="input-medium"/>
+          <label for="csv_input">Upload a CSV file</label>
+          <input type="file" name="csv_input" class="input-medium"/>
           </div>
 
         <input type="submit" class="btn"/>
@@ -98,15 +153,14 @@ $form = '<form method="post" action="index.php" enctype="multipart/form-data">
     <h1>Redirection checker</h1>
 
 <?php
-
-if (!array_key_exists('csv', $_FILES)) {
+if (!array_key_exists('csv_input', $_FILES)) {
   print $form;
 }
 else {
 
-  $file = fopen($_FILES['csv']['tmp_name'], 'r');
+  $file = fopen($_FILES['csv_input']['tmp_name'], 'r');
 
-  $results = $successes = $failures = array();
+  $results = $output_array = $successes = $failures = array();
 
   $count_200 = $count_301 = $count_404 = 0;
 
@@ -163,9 +217,11 @@ else {
         $result['expected'] = $expected_url;
 
         if ($expected_url == $actual_url) {
+          $result['result'] = 'Success';
           $successes[] = $result;
         }
         else {
+          $result['result'] = 'Error';
           $failures[] = $result;
         }
       }
@@ -229,6 +285,12 @@ else {
     <p>
       <a href="index.php" class="btn btn-success">Start again</a>
     </p>
+
+  <form method="post">
+    <input type="hidden" name="csv_output" value="true"/>
+    <input type="hidden" name="results" value="<?php print htmlentities(serialize($results)); ?>"/>
+    <input type="submit" class="btn" value="Output as CSV"/>
+  </form>
 
       <?php if ($failure_count): ?>
         <div class="panel panel-default">

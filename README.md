@@ -3,6 +3,7 @@ redirect-tester
 
 This is a PHP script for testing large numbers of automated redirects, e.g. in a set of .htaccess rules.
 
+It is intended for local use only - it does not carry out input sanitisation, so it is not recommended that you put it on public-facing servers.
 
 ## Usage
 
