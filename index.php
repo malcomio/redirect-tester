@@ -57,7 +57,7 @@ function visit_url($curl, $url, $proxy = FALSE) {
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
     if ($status === HTTP_STATUS_MOVED_PERMANENTLY || $status === HTTP_STATUS_FOUND) {
-      preg_match("@https?://([-\w\.]+)+(:\d+)?(/([\w/_\-\.]*(\?\S+)?)?)?@", $response, $matches);
+      preg_match('/\b(?:(?:https?|http):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i', $response, $matches);
       $result['target'] = $matches[0];
     }
   }
@@ -170,8 +170,8 @@ else {
   $proxy = $_POST['proxy'];
   $curl = setup_curl($proxy);
   while ($row = fgetcsv($file)) {
-    $original_url = $row[0];
-    $expected_url = $row[1];
+    $original_url = trim($row[0]);
+    $expected_url = trim($row[1]);
 
     $parsed_original = parse_url($original_url);
     $parsed_expected = parse_url($expected_url);
