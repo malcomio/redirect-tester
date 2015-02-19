@@ -11,7 +11,8 @@ define('HTTP_STATUS_NOT_FOUND', 404);
 /**
  * Helper function to output print_r() surrounded by <pre> tags.
  *
- * @param $input
+ * @param string $input
+ *   The text to output.
  */
 function print_r_clean($input) {
   echo '<pre>';
@@ -22,8 +23,11 @@ function print_r_clean($input) {
 /**
  * Prepare a curl resource.
  *
- * @param $proxy
+ * @param string $proxy
+ *   An http proxy to use, if required.
+ *
  * @return resource
+ *   a cURL handle on success, false on errors.
  */
 function setup_curl($proxy = '') {
   $curl = curl_init();
@@ -45,7 +49,7 @@ function setup_curl($proxy = '') {
  * @param bool $proxy
  *
  * @return array
- *   Array containing the
+ *   Array containing:
  *     url
  *     status code
  */
@@ -71,10 +75,13 @@ function visit_url($curl, $url, $proxy = FALSE) {
  * Convert an array to CSV output.
  *
  * @param array $array
+ *   The input array
+ *
  * @return null|string
+ *   The CSV output, or NULL if the array is empty
  */
 function array2csv(array &$array) {
-  if (count($array) == 0) {
+  if (empty($array)) {
     return NULL;
   }
   ob_start();
@@ -89,21 +96,23 @@ function array2csv(array &$array) {
 
 /**
  * Output headers for a filename.
- * @param $filename
+ *
+ * @param string $filename
+ *   The name of the file.
  */
 function download_send_headers($filename) {
-  // disable caching
+  // Disable caching.
   $now = gmdate("D, d M Y H:i:s");
   header("Expires: Tue, 03 Jul 2001 06:00:00 GMT");
   header("Cache-Control: max-age=0, no-cache, must-revalidate, proxy-revalidate");
   header("Last-Modified: {$now} GMT");
 
-  // force download
+  // Force download.
   header("Content-Type: application/force-download");
   header("Content-Type: application/octet-stream");
   header("Content-Type: application/download");
 
-  // disposition / encoding on response body
+  // Set disposition / encoding on response body.
   header("Content-Disposition: attachment;filename={$filename}");
   header("Content-Transfer-Encoding: binary");
 }
@@ -169,6 +178,7 @@ else {
 
   $proxy = $_POST['proxy'];
   $curl = setup_curl($proxy);
+
   while ($row = fgetcsv($file)) {
     $original_url = trim($row[0]);
     $expected_url = trim($row[1]);
