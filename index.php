@@ -44,16 +44,18 @@ function setup_curl($proxy = '') {
 /**
  * Visit a URL.
  *
- * @param $curl
+ * @param resource $curl
+ *   a cURL handle
+ *
  * @param string $url
- * @param bool $proxy
+ *   The URL to visit.
  *
  * @return array
  *   Array containing:
  *     url
  *     status code
  */
-function visit_url($curl, $url, $proxy = FALSE) {
+function visit_url($curl, $url) {
   $result = array();
   if (substr($url, 0, 4) == "http") {
     curl_setopt($curl, CURLOPT_URL, $url);
