@@ -56,13 +56,13 @@ function visit_url($curl, $url, $proxy = FALSE) {
     $response = @curl_exec($curl);
     $status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-    if ($status === HTTP_STATUS_MOVED_PERMANENTLY || $status === HTTP_STATUS_FOUND) {
+    if ($status) {
       preg_match('/\b(?:(?:https?|http):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i', $response, $matches);
       $result['target'] = $matches[0];
     }
+    $result['httpcode'] = $status;
+    $result['url'] = $url;
   }
-  $result['httpcode'] = $status;
-  $result['url'] = $url;
 
   return $result;
 }
@@ -200,6 +200,7 @@ else {
 
         case HTTP_STATUS_NOT_FOUND:
           $count_404++;
+          $actual_url = $visit['url'];
           break;
       }
 
