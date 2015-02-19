@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * Script for testing a list of http redirects.
+ */
+
 set_time_limit(0);
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 1);
@@ -66,7 +71,7 @@ function visit_url($curl, $url) {
       preg_match('/\b(?:(?:https?|http):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i', $response, $matches);
       $result['target'] = $matches[0];
     }
-    $result['httpcode'] = $status;
+    $result['http_code'] = $status;
     $result['url'] = $url;
   }
 
@@ -196,10 +201,10 @@ else {
 
       $result = array(
         'original' => $original_url,
-        'httpcode' => $visit['httpcode'],
+        'http_code' => $visit['http_code'],
       );
 
-      switch ($visit['httpcode']) {
+      switch ($visit['http_code']) {
         case HTTP_STATUS_OK:
           $count_200++;
           $actual_url = $visit['url'];
@@ -217,7 +222,7 @@ else {
       }
 
       // Deal with multiple redirections.
-      while ($visit['httpcode'] == HTTP_STATUS_MOVED_PERMANENTLY) {
+      while ($visit['http_code'] == HTTP_STATUS_MOVED_PERMANENTLY) {
         if ($visit['target'] == $actual_url) {
           break;
         }
@@ -315,23 +320,25 @@ else {
           </div>
           <table id="failure" class="table table-striped table-bordered">
             <thead>
-            <th>Original URL</th>
-            <th>Expected URL</th>
-            <th>HTTP response</th>
-            <th>Actual URL</th>
+              <tr>
+                <th>Original URL</th>
+                <th>Expected URL</th>
+                <th>HTTP response</th>
+                <th>Actual URL</th>
+              </tr>
             </thead>
             <tbody>
             <?php foreach ($failures as $failure): ?>
               <tr>
                 <td><?php print $failure['original']; ?></td>
                 <td><?php print $failure['expected']; ?></td>
-                <td><?php print $failure['httpcode']; ?></td>
+                <td><?php print $failure['http_code']; ?></td>
                 <td><?php print $failure['actual']; ?></td>
               </tr>
-               <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
+             <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
 
       <?php endif; ?>
       <?php if ($success_count): ?>
@@ -342,17 +349,19 @@ else {
         <table id="success" class="table table-striped table-bordered">
 
           <thead>
-          <th>Original URL</th>
-          <th>Expected URL</th>
-          <th>HTTP response</th>
-          <th>Actual URL</th>
+            <tr>
+              <th>Original URL</th>
+              <th>Expected URL</th>
+              <th>HTTP response</th>
+              <th>Actual URL</th>
+            </tr>
           </thead>
           <tbody>
           <?php foreach ($successes as $success): ?>
             <tr>
               <td><?php print $success['original']; ?></td>
               <td><?php print $success['expected']; ?></td>
-              <td><?php print $success['httpcode']; ?></td>
+              <td><?php print $success['http_code']; ?></td>
               <td><?php print $success['actual']; ?></td>
             </tr>
           <?php endforeach; ?>
