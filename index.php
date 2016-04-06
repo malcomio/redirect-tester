@@ -59,6 +59,17 @@ function setup_curl($proxy = '') {
 }
 
 /**
+ * Check if a URL is invalid, according to FILTER_VALIDATE_URL.
+ * 
+ * @param string $url
+ * @return bool
+ *   TRUE if the URL should be considered invalid.
+ */
+function invalid_url($url) {
+  return filter_var($url, FILTER_VALIDATE_URL) === FALSE;
+}
+
+/**
  * Visit a URL.
  *
  * @param resource $curl
@@ -282,8 +293,11 @@ else {
   $failure_count = count($failures);
 
   $originals = array_count_values(array_column($results, 'original'));
-
   $duplicate_originals = array_filter($originals, 'more_than_1');
+  
+  $invalid_originals = array_filter(array_column($results, 'original'), 'invalid_url');
+  $invalid_expecteds = array_filter(array_column($results, 'expected'), 'invalid_url');
+
   ?>
 
   <?php if ($result_count) : ?>
@@ -350,6 +364,32 @@ else {
       <ul>
         <?php foreach ($duplicate_originals as $original => $count): ?>
           <li><?php print $original .' : ' . $count . ' instances'; ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  <?php endif; ?>
+
+  <?php if (!empty($invalid_originals)): ?>
+    <div class="alert alert-danger" role="alert">
+      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+      <span class="sr-only">Error:</span>
+      The input contains the following invalid original URLs:
+      <ul>
+        <?php foreach ($invalid_originals as $url): ?>
+          <li><?php print $url; ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  <?php endif; ?>
+
+  <?php if (!empty($invalid_expecteds)): ?>
+    <div class="alert alert-danger" role="alert">
+      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+      <span class="sr-only">Error:</span>
+      The input contains the following invalid expected URLs:
+      <ul>
+        <?php foreach ($invalid_expecteds as $url): ?>
+          <li><?php print $url; ?></li>
         <?php endforeach; ?>
       </ul>
     </div>
