@@ -69,7 +69,10 @@ function visit_url($curl, $url) {
 
     if ($status) {
       preg_match('/\b(?:(?:https?|http):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i', $response, $matches);
-      $result['target'] = $matches[0];
+
+      if (!empty($matches[0])) {
+        $result['target'] = $matches[0];
+      }
     }
     $result['http_code'] = $status;
     $result['url'] = $url;
@@ -124,7 +127,6 @@ function download_send_headers($filename) {
   header("Content-Transfer-Encoding: binary");
 }
 
-
 /**
  * Output the results as a CSV.
  */
@@ -132,11 +134,15 @@ if (!empty($_POST['csv_output'])) {
 
   $results = unserialize($_POST['results']);
 
+  if (is_array($results)) {
   download_send_headers("redirect-test-results_" . date("Y-m-d") . ".csv");
-  echo array2csv($results);
-  die();
+    echo array2csv($results);
+    die();
+  }
+  else {
+    print_r_clean($results);
+  }
 }
-
 
 $form = '<form method="post" enctype="multipart/form-data">
 <div class="panel panel-default">
@@ -158,18 +164,24 @@ $form = '<form method="post" enctype="multipart/form-data">
 
 ?>
 <html>
-  <head>
-    <title>URL Redirection Tester</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
-  </head>
-  <body>
-  <a href="https://github.com/malcomio/redirect-tester">
-    <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png">
-  </a>
+<head>
+  <title>URL Redirection Tester</title>
+  <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet"
+        href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+</head>
+<body>
+<a href="https://github.com/malcomio/redirect-tester">
+  <img style="position: absolute; top: 0; right: 0; border: 0;"
+       src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67"
+       alt="Fork me on GitHub"
+       data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png">
+</a>
+
 <div class="container">
 
-    <h1>Redirection checker</h1>
+<h1>Redirection checker</h1>
 
 <?php
 if (!array_key_exists('csv_input', $_FILES)) {
@@ -187,68 +199,70 @@ else {
   $curl = setup_curl($proxy);
 
   while ($row = fgetcsv($file)) {
-    $original_url = trim($row[0]);
-    $expected_url = trim($row[1]);
+    if (!empty($row[0]) && !empty($row[1])) {
+      $original_url = trim($row[0]);
+      $expected_url = trim($row[1]);
 
-    $parsed_original = parse_url($original_url);
-    $parsed_expected = parse_url($expected_url);
+      $parsed_original = parse_url($original_url);
+      $parsed_expected = parse_url($expected_url);
 
-    // Is there a URL to check?
-    if (array_key_exists('scheme', $parsed_original)) {
-      $visit = visit_url($curl, $original_url, $proxy);
+      // Is there a URL to check?
+      if (array_key_exists('scheme', $parsed_original)) {
+        $visit = visit_url($curl, $original_url, $proxy);
 
-      $actual_url = '';
+        $actual_url = '';
 
-      $result = array(
-        'original' => $original_url,
-        'http_code' => $visit['http_code'],
-      );
+        $result = array(
+          'original' => $original_url,
+          'http_code' => $visit['http_code'],
+        );
 
-      switch ($visit['http_code']) {
-        case HTTP_STATUS_OK:
-          $count_200++;
-          $actual_url = $visit['url'];
-          break;
+        switch ($visit['http_code']) {
+          case HTTP_STATUS_OK:
+            $count_200++;
+            $actual_url = $visit['url'];
+            break;
 
-        case HTTP_STATUS_MOVED_PERMANENTLY:
-          $count_301++;
+          case HTTP_STATUS_MOVED_PERMANENTLY:
+            $count_301++;
+            $actual_url = $visit['target'];
+            break;
+
+          case HTTP_STATUS_NOT_FOUND:
+            $count_404++;
+            $actual_url = $visit['url'];
+            break;
+        }
+
+        // Deal with multiple redirections.
+        while ($visit['http_code'] == HTTP_STATUS_MOVED_PERMANENTLY) {
+          if ($visit['target'] == $actual_url) {
+            break;
+          }
+
+          $visit = visit_url($curl, $actual_url, $proxy);
           $actual_url = $visit['target'];
-          break;
-
-        case HTTP_STATUS_NOT_FOUND:
-          $count_404++;
-          $actual_url = $visit['url'];
-          break;
-      }
-
-      // Deal with multiple redirections.
-      while ($visit['http_code'] == HTTP_STATUS_MOVED_PERMANENTLY) {
-        if ($visit['target'] == $actual_url) {
-          break;
         }
 
-        $visit = visit_url($curl, $actual_url, $proxy);
-        $actual_url = $visit['target'];
-      }
+        $result['actual'] = $actual_url;
 
-      $result['actual'] = $actual_url;
+        // Do we expect a particular URL?
+        if (array_key_exists('scheme', $parsed_expected)) {
+          $result['expected'] = $expected_url;
 
-      // Do we expect a particular URL?
-      if (array_key_exists('scheme', $parsed_expected)) {
-        $result['expected'] = $expected_url;
-
-        if ($expected_url == $actual_url) {
-          $result['result'] = 'Success';
-          $successes[] = $result;
+          if ($expected_url == $actual_url) {
+            $result['result'] = 'Success';
+            $successes[] = $result;
+          }
+          else {
+            $result['result'] = 'Error';
+            $failures[] = $result;
+          }
         }
-        else {
-          $result['result'] = 'Error';
-          $failures[] = $result;
-        }
+
+        $results[] = $result;
+
       }
-
-      $results[] = $result;
-
     }
   }
 
@@ -259,120 +273,123 @@ else {
   ?>
 
   <?php if ($result_count) : ?>
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <h3 class="panel-title">Summary</h3>
-          </div>
-          <table class="table table-striped table-bordered">
-            <thead>
-            <tr>
-              <th>URLs checked</th>
-              <th><?php print HTTP_STATUS_OK; ?></th>
-              <th><?php print HTTP_STATUS_MOVED_PERMANENTLY; ?></th>
-              <th><?php print HTTP_STATUS_NOT_FOUND; ?></th>
-              <?php if ($success_count) : ?>
-                <th>Successes</th>
-              <?php endif; ?>
-              <?php if ($failure_count): ?>
-                <th>Errors</th>
-              <?php endif; ?>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-              <td><?php print $result_count; ?></td>
-              <td><?php print $count_200; ?></td>
-              <td><?php print $count_301; ?></td>
-              <td><?php print $count_404; ?></td>
-              <?php if ($success_count) : ?>
-                <td>
-                  <a href="#success">
-                    <?php print $success_count; ?>
-                  </a>
-                </td>
-              <?php endif; ?>
-              <?php if ($failure_count): ?>
-                <td>
-                  <a href="#failure">
-                    <?php print $failure_count; ?>
-                  </a>
-                </td>
-              <?php endif; ?>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-    <p>
-      <a href="index.php" class="btn btn-success">Start again</a>
-    </p>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Summary</h3>
+      </div>
+      <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+          <th>URLs checked</th>
+          <th><?php print HTTP_STATUS_OK; ?></th>
+          <th><?php print HTTP_STATUS_MOVED_PERMANENTLY; ?></th>
+          <th><?php print HTTP_STATUS_NOT_FOUND; ?></th>
+          <?php if ($success_count) : ?>
+            <th>Successes</th>
+          <?php endif; ?>
+          <?php if ($failure_count): ?>
+            <th>Errors</th>
+          <?php endif; ?>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><?php print $result_count; ?></td>
+          <td><?php print $count_200; ?></td>
+          <td><?php print $count_301; ?></td>
+          <td><?php print $count_404; ?></td>
+          <?php if ($success_count) : ?>
+            <td>
+              <a href="#success">
+                <?php print $success_count; ?>
+              </a>
+            </td>
+          <?php endif; ?>
+          <?php if ($failure_count): ?>
+            <td>
+              <a href="#failure">
+                <?php print $failure_count; ?>
+              </a>
+            </td>
+          <?php endif; ?>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+  <p>
+    <a href="index.php" class="btn btn-success">Start again</a>
+  </p>
 
+  <?php print_r_clean(htmlentities(serialize($results))); print_r_clean($results); ?>
+  
   <form method="post">
     <input type="hidden" name="csv_output" value="true"/>
-    <input type="hidden" name="results" value="<?php print htmlentities(serialize($results)); ?>"/>
+    <input type="hidden" name="results"
+           value="<?php print htmlentities(serialize($results)); ?>"/>
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
 
-      <?php if ($failure_count): ?>
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <h3 class="panel-title">Errors</h3>
-          </div>
-          <table id="failure" class="table table-striped table-bordered">
-            <thead>
-              <tr>
-                <th>Original URL</th>
-                <th>Expected URL</th>
-                <th>HTTP response</th>
-                <th>Actual URL</th>
-              </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($failures as $failure): ?>
-              <tr>
-                <td><?php print $failure['original']; ?></td>
-                <td><?php print $failure['expected']; ?></td>
-                <td><?php print $failure['http_code']; ?></td>
-                <td><?php print $failure['actual']; ?></td>
-              </tr>
-             <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
+  <?php if ($failure_count): ?>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Errors</h3>
+      </div>
+      <table id="failure" class="table table-striped table-bordered">
+        <thead>
+        <tr>
+          <th>Original URL</th>
+          <th>Expected URL</th>
+          <th>HTTP response</th>
+          <th>Actual URL</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($failures as $failure): ?>
+          <tr>
+            <td><?php print $failure['original']; ?></td>
+            <td><?php print $failure['expected']; ?></td>
+            <td><?php print $failure['http_code']; ?></td>
+            <td><?php print $failure['actual']; ?></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
 
-      <?php endif; ?>
-      <?php if ($success_count): ?>
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">Successes</h3>
-        </div>
-        <table id="success" class="table table-striped table-bordered">
+  <?php endif; ?>
+  <?php if ($success_count): ?>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Successes</h3>
+      </div>
+      <table id="success" class="table table-striped table-bordered">
 
-          <thead>
-            <tr>
-              <th>Original URL</th>
-              <th>Expected URL</th>
-              <th>HTTP response</th>
-              <th>Actual URL</th>
-            </tr>
-          </thead>
-          <tbody>
-          <?php foreach ($successes as $success): ?>
-            <tr>
-              <td><?php print $success['original']; ?></td>
-              <td><?php print $success['expected']; ?></td>
-              <td><?php print $success['http_code']; ?></td>
-              <td><?php print $success['actual']; ?></td>
-            </tr>
-          <?php endforeach; ?>
-          </tbody>
-        </table>
-        </div>
+        <thead>
+        <tr>
+          <th>Original URL</th>
+          <th>Expected URL</th>
+          <th>HTTP response</th>
+          <th>Actual URL</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($successes as $success): ?>
+          <tr>
+            <td><?php print $success['original']; ?></td>
+            <td><?php print $success['expected']; ?></td>
+            <td><?php print $success['http_code']; ?></td>
+            <td><?php print $success['actual']; ?></td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
 
-      <?php
+  <?php
   endif;
 }
 ?>
-    </div>
-  </body>
+</div>
+</body>
 </html>
