@@ -177,6 +177,7 @@ $form = '<form method="post" enctype="multipart/form-data">
 <div class="form-group">
           <label for="csv_input">Upload a CSV file</label>
           <input type="file" name="csv_input" class="input-medium"/>
+          <p>See <a href="example.csv">the example CSV file</a> for the expected format</p>
           </div>
 
         <input type="submit" class="btn"/>
@@ -205,7 +206,8 @@ $form = '<form method="post" enctype="multipart/form-data">
 <div class="container">
 
 <h1>Redirection checker</h1>
-
+<p>Upload a CSV file containing original and expected redirected URLs to test whether your redirect rules are working as intended.</p>
+<p>See <a href="https://github.com/malcomio/redirect-tester/blob/master/README.md">the README</a> for more information.</p>
 <?php
 if (!array_key_exists('csv_input', $_FILES)) {
   print $form;
