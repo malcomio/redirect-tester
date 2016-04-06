@@ -229,7 +229,9 @@ else {
   $proxy = $_POST['proxy'];
   $curl = setup_curl($proxy);
 
+  $row_number = 0;
   while ($row = fgetcsv($file)) {
+    $row_number++;
     if (!empty($row[0]) && !empty($row[1])) {
       $original_url = trim($row[0]);
       $expected_url = trim($row[1]);
@@ -244,6 +246,7 @@ else {
         $actual_url = '';
 
         $result = array(
+          'row' => $row_number,
           'original' => $original_url,
           'http_code' => $visit['http_code'],
         );
@@ -300,12 +303,13 @@ else {
   $success_count = count($successes);
   $failure_count = count($failures);
 
-  $originals = array_count_values(array_column($results, 'original'));
-  $duplicate_originals = array_filter($originals, 'more_than_1');
+  $originals = array_column($results, 'original');
+  $expecteds = array_column($results, 'expected');
+  
+  $duplicate_originals = array_filter(array_count_values($originals), 'more_than_1');
   
   $invalid_originals = array_filter(array_column($results, 'original'), 'invalid_url');
   $invalid_expecteds = array_filter(array_column($results, 'expected'), 'invalid_url');
-
   ?>
 
   <?php if ($result_count) : ?>
@@ -363,6 +367,13 @@ else {
            value="<?php print htmlentities(serialize($results)); ?>"/>
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
+  
+  <?php
+
+  print_r_clean($results);
+  print_r_clean($originals);
+
+  ?>
 
   <ul>
     <?php if (!empty($duplicate_originals)): ?>
@@ -399,7 +410,17 @@ else {
       The input contains the following duplicate original URLs:
       <ul>
         <?php foreach ($duplicate_originals as $original => $count): ?>
-          <li><?php print $original .' : ' . $count . ' instances'; ?></li>
+          <li>
+            <?php print $original .' : ' . $count . ' instances'; ?>
+            <ul>
+              <?php 
+              $instances = array_keys($originals, $original);
+              foreach ($instances as $instance) {
+                print '<li>Row ' . $results[$instance]['row'] . '</li>';               
+              }
+              ?>
+            </ul>
+          </li>
         <?php endforeach; ?>
       </ul>
     </div>
@@ -413,7 +434,13 @@ else {
       The input contains the following invalid original URLs:
       <ul>
         <?php foreach ($invalid_originals as $url): ?>
-          <li><?php print $url; ?></li>
+          <?php
+          $instances = array_keys($invalid_originals, $url);
+          foreach ($instances as $instance): ?>
+            <li>
+              Row <?php print $results[$instance]['row']; ?>: <?php print $url; ?>
+            </li>
+          <?php endforeach; ?>
         <?php endforeach; ?>
       </ul>
     </div>
@@ -427,7 +454,13 @@ else {
       The input contains the following invalid expected URLs:
       <ul>
         <?php foreach ($invalid_expecteds as $url): ?>
-          <li><?php print $url; ?></li>
+          <?php
+          $instances = array_keys($invalid_expecteds, $url);
+          foreach ($instances as $instance): ?>
+            <li>
+              Row <?php print $results[$instance]['row']; ?>: <?php print $url; ?>
+            </li>
+          <?php endforeach; ?>
         <?php endforeach; ?>
       </ul>
     </div>
