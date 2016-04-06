@@ -26,6 +26,18 @@ function print_r_clean($input) {
 }
 
 /**
+ * Check if a value is greater than 1.
+ * 
+ * @param int $input
+ *   The value to check.
+ * @return bool
+ *   TRUE if the value is greater than 1.
+ */
+function more_than_1($input) {
+  return $input > 1;
+}
+
+/**
  * Prepare a curl resource.
  *
  * @param string $proxy
@@ -135,7 +147,7 @@ if (!empty($_POST['csv_output'])) {
   $results = unserialize($_POST['results']);
 
   if (is_array($results)) {
-  download_send_headers("redirect-test-results_" . date("Y-m-d") . ".csv");
+    download_send_headers("redirect-test-results_" . date("Y-m-d") . ".csv");
     echo array2csv($results);
     die();
   }
@@ -259,9 +271,7 @@ else {
             $failures[] = $result;
           }
         }
-
         $results[] = $result;
-
       }
     }
   }
@@ -270,6 +280,10 @@ else {
   $result_count = count($results);
   $success_count = count($successes);
   $failure_count = count($failures);
+
+  $originals = array_count_values(array_column($results, 'original'));
+
+  $duplicate_originals = array_filter($originals, 'more_than_1');
   ?>
 
   <?php if ($result_count) : ?>
@@ -327,6 +341,19 @@ else {
            value="<?php print htmlentities(serialize($results)); ?>"/>
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
+
+  <?php if (!empty($duplicate_originals)): ?>
+    <div class="alert alert-danger" role="alert">
+      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+      <span class="sr-only">Error:</span>
+      The input contains the following duplicate original URLs:
+      <ul>
+        <?php foreach ($duplicate_originals as $original => $count): ?>
+          <li><?php print $original .' : ' . $count . ' instances'; ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+  <?php endif; ?>
 
   <?php if ($failure_count): ?>
     <div class="panel panel-default">
