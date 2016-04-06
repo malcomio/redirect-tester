@@ -185,6 +185,7 @@ $form = '<form method="post" enctype="multipart/form-data">
 </div>
       </form>';
 
+$back_to_top_link = '<a href="#">Back to top</a>';
 
 ?>
 <html>
@@ -194,6 +195,12 @@ $form = '<form method="post" enctype="multipart/form-data">
         href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
   <link rel="stylesheet"
         href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+  <style>
+    table {
+      table-layout: fixed;
+      word-break: break-word;
+    }
+  </style>
 </head>
 <body>
 <a href="https://github.com/malcomio/redirect-tester">
@@ -303,7 +310,7 @@ else {
   ?>
 
   <?php if ($result_count) : ?>
-    <div class="panel panel-default">
+    <div class="panel panel-default" id="summary">
       <div class="panel-heading">
         <h3 class="panel-title">Summary</h3>
       </div>
@@ -358,8 +365,36 @@ else {
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
 
+  <ul>
+    <?php if (!empty($duplicate_originals)): ?>
+      <li>
+        <a href="#error-duplicates">Duplicate originals</a>
+      </li>
+    <?php endif; ?>
+    <?php if (!empty($invalid_originals)): ?>
+      <li>
+        <a href="#error-invalid-original">Invalid original URLs</a>
+      </li>
+    <?php endif; ?>
+    <?php if (!empty($invalid_expecteds)): ?>
+      <li>
+        <a href="#error-invalid-expected">Invalid expected URLs</a>
+      </li>
+    <?php endif; ?>
+    <?php if (!empty($failures)): ?>
+      <li>
+        <a href="#errors">Errors</a>
+      </li>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+      <li>
+        <a href="#successes">Successes</a>
+      </li>
+    <?php endif; ?>    
+  </ul>
+
   <?php if (!empty($duplicate_originals)): ?>
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" id="error-duplicates">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
       The input contains the following duplicate original URLs:
@@ -369,10 +404,11 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
+    <?php print $back_to_top_link; ?>
   <?php endif; ?>
 
   <?php if (!empty($invalid_originals)): ?>
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" id="error-invalid-original">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
       The input contains the following invalid original URLs:
@@ -382,10 +418,11 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
+    <?php print $back_to_top_link; ?>
   <?php endif; ?>
 
   <?php if (!empty($invalid_expecteds)): ?>
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger" role="alert" id="error-invalid-expected">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
       The input contains the following invalid expected URLs:
@@ -395,10 +432,11 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
+    <?php print $back_to_top_link; ?>
   <?php endif; ?>
 
   <?php if ($failure_count): ?>
-    <div class="panel panel-default">
+    <div class="panel panel-default" id="errors">
       <div class="panel-heading">
         <h3 class="panel-title">Errors</h3>
       </div>
@@ -423,22 +461,22 @@ else {
         </tbody>
       </table>
     </div>
-
+    <?php print $back_to_top_link; ?>
   <?php endif; ?>
+
   <?php if ($success_count): ?>
-    <div class="panel panel-default">
+    <div class="panel panel-default" id="successes">
       <div class="panel-heading">
         <h3 class="panel-title">Successes</h3>
       </div>
       <table id="success" class="table table-striped table-bordered">
-
         <thead>
-        <tr>
-          <th>Original URL</th>
-          <th>Expected URL</th>
-          <th>HTTP response</th>
-          <th>Actual URL</th>
-        </tr>
+          <tr>
+            <th>Original URL</th>
+            <th>Expected URL</th>
+            <th>HTTP response</th>
+            <th>Actual URL</th>
+          </tr>
         </thead>
         <tbody>
         <?php foreach ($successes as $success): ?>
@@ -452,11 +490,9 @@ else {
         </tbody>
       </table>
     </div>
-
-  <?php
-  endif;
-}
-?>
+    <?php print $back_to_top_link; ?>
+  <?php endif; ?>
+<?php } ?>
 </div>
 </body>
 </html>
