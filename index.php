@@ -176,7 +176,7 @@ $form = '<form method="post" enctype="multipart/form-data">
 </div>
 <div class="form-group">
           <label for="csv_input">Upload a CSV file</label>
-          <input type="file" name="csv_input" class="input-medium"/>
+          <input type="file" name="csv_input" class="input-medium" required/>
           <p>See <a href="example.csv">the example CSV file</a> for the expected format</p>
           </div>
 
