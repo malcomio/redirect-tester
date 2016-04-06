@@ -321,8 +321,6 @@ else {
     <a href="index.php" class="btn btn-success">Start again</a>
   </p>
 
-  <?php print_r_clean(htmlentities(serialize($results))); print_r_clean($results); ?>
-  
   <form method="post">
     <input type="hidden" name="csv_output" value="true"/>
     <input type="hidden" name="results"
