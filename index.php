@@ -196,8 +196,7 @@ $back_to_top_link = '<a href="#">Back to top</a>';
   <link rel="stylesheet"
         href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
   <style>
-    table {
-      table-layout: fixed;
+    tbody {
       word-break: break-word;
     }
   </style>
