@@ -27,7 +27,7 @@ function print_r_clean($input) {
 
 /**
  * Check if a value is greater than 1.
- * 
+ *
  * @param int $input
  *   The value to check.
  * @return bool
@@ -60,7 +60,7 @@ function setup_curl($proxy = '') {
 
 /**
  * Check if a URL is invalid, according to FILTER_VALIDATE_URL.
- * 
+ *
  * @param string $url
  * @return bool
  *   TRUE if the URL should be considered invalid.
@@ -280,7 +280,7 @@ else {
 
         $result['actual'] = $actual_url;
         $result['http_code'] = $visit['http_code'];
-        
+
         // Do we expect a particular URL?
         if (array_key_exists('scheme', $parsed_expected)) {
           if ($expected_url == $actual_url) {
@@ -304,9 +304,9 @@ else {
 
   $originals = array_column($results, 'original');
   $expecteds = array_column($results, 'expected');
-  
+
   $duplicate_originals = array_filter(array_count_values($originals), 'more_than_1');
-  
+
   $invalid_originals = array_filter(array_column($results, 'original'), 'invalid_url');
   $invalid_expecteds = array_filter(array_column($results, 'expected'), 'invalid_url');
   ?>
@@ -367,33 +367,37 @@ else {
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
 
-  <ul>
-    <?php if (!empty($duplicate_originals)): ?>
-      <li>
-        <a href="#error-duplicates">Duplicate originals</a>
-      </li>
-    <?php endif; ?>
-    <?php if (!empty($invalid_originals)): ?>
-      <li>
-        <a href="#error-invalid-original">Invalid original URLs</a>
-      </li>
-    <?php endif; ?>
-    <?php if (!empty($invalid_expecteds)): ?>
-      <li>
-        <a href="#error-invalid-expected">Invalid expected URLs</a>
-      </li>
-    <?php endif; ?>
-    <?php if (!empty($failures)): ?>
-      <li>
-        <a href="#errors">Errors</a>
-      </li>
-    <?php endif; ?>
-    <?php if (!empty($successes)): ?>
-      <li>
-        <a href="#successes">Successes</a>
-      </li>
-    <?php endif; ?>    
-  </ul>
+  <?php
+  $navigation = array($back_to_top_link);
+
+  if (!empty($duplicate_originals)) {
+    $navigation[] = '<a href="#error-duplicates">Duplicate originals</a>';
+  }
+
+  if (!empty($invalid_originals)) {
+    $navigation[] = '<a href="#error-invalid-original">Invalid original URLs</a>';
+  }
+
+  if (!empty($invalid_expecteds)) {
+    $navigation[] = '<a href="#error-invalid-expected">Invalid expected URLs</a>';
+  }
+
+  if (!empty($failures)) {
+    $navigation[] = '<a href="#errors">Errors</a>';
+  }
+
+  if (!empty($successes)) {
+    $navigation[] = '<a href="#successes">Successes</a>';
+  }
+
+  $navigation_markup = '<ul>';
+  foreach ($navigation as $link) {
+    $navigation_markup .= '<li>' . $link . '</li>';
+  }
+  $navigation_markup .= '</ul>';
+
+  print $navigation_markup;
+  ?>
 
   <?php if (!empty($duplicate_originals)): ?>
     <div class="alert alert-warning" role="alert" id="error-duplicates">
@@ -403,12 +407,12 @@ else {
       <ul>
         <?php foreach ($duplicate_originals as $original => $count): ?>
           <li>
-            <?php print $original .' : ' . $count . ' instances'; ?>
+            <?php print $original . ' : ' . $count . ' instances'; ?>
             <ul>
-              <?php 
+              <?php
               $instances = array_keys($originals, $original);
               foreach ($instances as $instance) {
-                print '<li>Row ' . $results[$instance]['row'] . '</li>';               
+                print '<li>Row ' . $results[$instance]['row'] . '</li>';
               }
               ?>
             </ul>
@@ -416,12 +420,13 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
-    <?php print $back_to_top_link; ?>
+    <?php print $navigation_markup; ?>
   <?php endif; ?>
 
   <?php if (!empty($invalid_originals)): ?>
     <div class="alert alert-danger" role="alert" id="error-invalid-original">
-      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+      <span class="glyphicon glyphicon-exclamation-sign"
+            aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
       The input contains the following invalid original URLs:
       <ul>
@@ -436,7 +441,7 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
-    <?php print $back_to_top_link; ?>
+    <?php print $navigation_markup; ?>
   <?php endif; ?>
 
   <?php if (!empty($invalid_expecteds)): ?>
@@ -456,7 +461,7 @@ else {
         <?php endforeach; ?>
       </ul>
     </div>
-    <?php print $back_to_top_link; ?>
+    <?php print $navigation_markup; ?>
   <?php endif; ?>
 
   <?php if ($failure_count): ?>
@@ -485,7 +490,7 @@ else {
         </tbody>
       </table>
     </div>
-    <?php print $back_to_top_link; ?>
+    <?php print $navigation_markup; ?>
   <?php endif; ?>
 
   <?php if ($success_count): ?>
@@ -514,7 +519,7 @@ else {
         </tbody>
       </table>
     </div>
-    <?php print $back_to_top_link; ?>
+    <?php print $navigation_markup; ?>
   <?php endif; ?>
 <?php } ?>
 </div>
