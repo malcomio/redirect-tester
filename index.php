@@ -248,7 +248,7 @@ else {
         $result = array(
           'row' => $row_number,
           'original' => $original_url,
-          'http_code' => $visit['http_code'],
+          'expected' => $expected_url,
         );
 
         switch ($visit['http_code']) {
@@ -279,11 +279,10 @@ else {
         }
 
         $result['actual'] = $actual_url;
-
+        $result['http_code'] = $visit['http_code'];
+        
         // Do we expect a particular URL?
         if (array_key_exists('scheme', $parsed_expected)) {
-          $result['expected'] = $expected_url;
-
           if ($expected_url == $actual_url) {
             $result['result'] = 'Success';
             $successes[] = $result;
@@ -367,13 +366,6 @@ else {
            value="<?php print htmlentities(serialize($results)); ?>"/>
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
-  
-  <?php
-
-  print_r_clean($results);
-  print_r_clean($originals);
-
-  ?>
 
   <ul>
     <?php if (!empty($duplicate_originals)): ?>
