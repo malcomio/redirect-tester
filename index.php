@@ -396,7 +396,7 @@ else {
   </ul>
 
   <?php if (!empty($duplicate_originals)): ?>
-    <div class="alert alert-danger" role="alert" id="error-duplicates">
+    <div class="alert alert-warning" role="alert" id="error-duplicates">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
       The input contains the following duplicate original URLs:
