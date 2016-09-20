@@ -46,7 +46,7 @@ function more_than_1($input) {
  * @return resource
  *   a cURL handle on success, false on errors.
  */
-function setup_curl($proxy = '') {
+function setup_curl($proxy = '', $user = '', $password = '') {
   $curl = curl_init();
   curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
   curl_setopt($curl, CURLOPT_NOBODY, TRUE);
@@ -55,6 +55,11 @@ function setup_curl($proxy = '') {
   if ($proxy) {
     curl_setopt($curl, CURLOPT_PROXY, $proxy);
   }
+
+  if ($user && $password) {
+    curl_setopt($curl, CURLOPT_USERPWD, $user . ":" . $password);
+  }
+
   return $curl;
 }
 
@@ -175,6 +180,12 @@ $form = '<form method="post" enctype="multipart/form-data">
           <input type="text" name="proxy" value=""/>
 </div>
 <div class="form-group">
+  <label for="username">Username</label>
+  <input type="text" name="username" value=""/>
+  <label for="password">Password</label>
+  <input type="pass" name="password" value=""/>
+</div>
+<div class="form-group">
           <label for="csv_input">Upload a CSV file</label>
           <input type="file" name="csv_input" class="input-medium" required/>
           <p>See <a href="example.csv">the example CSV file</a> for the expected format</p>
@@ -227,7 +238,11 @@ else {
   $count_200 = $count_301 = $count_404 = 0;
 
   $proxy = $_POST['proxy'];
-  $curl = setup_curl($proxy);
+
+  $user = $_POST['username'];
+  $password = $_POST['password'];
+
+  $curl = setup_curl($proxy, $user, $password);
 
   $row_number = 0;
   while ($row = fgetcsv($file)) {
