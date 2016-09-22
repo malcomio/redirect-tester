@@ -209,6 +209,13 @@ $form = '<form method="post" enctype="multipart/form-data">
   <label for="password">Password</label>
   <input type="pass" name="password" value=""/>
 </div>
+
+<div class="form-group">
+  <label for="find">Find</label>
+  <input type="text" name="find"/>
+  <label for="replace">Find</label>
+  <input type="text" name="replace"/>
+</div>
 <div class="form-group">
           <label for="csv_input">Upload a CSV file</label>
           <input type="file" name="csv_input" class="input-medium" required/>
@@ -274,6 +281,14 @@ else {
     if (!empty($row[0]) && !empty($row[1])) {
       $original_url = trim($row[0]);
       $expected_url = trim($row[1]);
+
+      if (!empty($_POST['find']) && !empty($_POST['replace'])) {
+        $find = $_POST['find'];
+        $replace = $_POST['replace'];
+
+        $original_url = str_replace($find, $replace, $original_url);
+        $expected_url = str_replace($find, $replace, $expected_url);
+      }
 
       $parsed_original = parse_url($original_url);
       $parsed_expected = parse_url($expected_url);
@@ -394,6 +409,27 @@ else {
         </tbody>
       </table>
     </div>
+
+    <?php if (!empty($find)): ?>
+      <div class="panel panel-default" id="find-replace">
+        <div class="panel-heading">
+          <h3 class="panel-title">Find and replace</h3>
+        </div>
+        <table class="table table-striped table-bordered">
+          <thead>
+            <th>Find</th>
+            <th>Replace</th>
+          </thead>
+          <tbody>
+            <tr>
+              <td><?php print $find; ?></td>
+              <td><?php print $replace; ?></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+
   <?php endif; ?>
   <p>
     <a href="index.php" class="btn btn-success">Start again</a>
