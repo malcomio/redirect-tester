@@ -110,6 +110,30 @@ function visit_url($curl, $url) {
 }
 
 /**
+ * Check if two URLs match.
+ *
+ * @param string $expected_url
+ * @param string $actual_url
+ * @return bool
+ *   TRUE if the URLs should be considered a match.
+ */
+function url_matches($expected_url, $actual_url) {
+  $match = FALSE;
+
+  // Exact match.
+  if ($expected_url == $actual_url) {
+    $match = TRUE;
+  }
+
+  // Has a trailing slash.
+  if ($expected_url . '/' == $actual_url) {
+    $match = TRUE;
+  }
+
+  return $match;
+}
+
+/**
  * Convert an array to CSV output.
  *
  * @param array $array
@@ -298,7 +322,7 @@ else {
 
         // Do we expect a particular URL?
         if (array_key_exists('scheme', $parsed_expected)) {
-          if ($expected_url == $actual_url) {
+          if (url_matches($expected_url, $actual_url)) {
             $result['result'] = 'Success';
             $successes[] = $result;
           }
