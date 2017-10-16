@@ -181,3 +181,8 @@ function output_csv_results($resData) {
     print_r_clean($results);
   }
 }
+
+function ifset($array, $element, $default = '')
+{
+    return isset($array[$element]) ? $array[$element] : $default;
+}
