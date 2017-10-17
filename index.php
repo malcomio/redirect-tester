@@ -6,6 +6,7 @@
 
 require_once('functions.php');
 require_once('redirectTester.php');
+require_once('rtOutput.php');
 
 set_time_limit(0);
 ini_set('error_reporting', E_ALL);
