@@ -28,10 +28,14 @@ if (!empty($_POST['csv_output'])) {
 include "template_top.html";
 
 if (!array_key_exists('csv_input', $_FILES)) {
-  include "form.html";
-}
-else {
-  main_processor();
+    include "form.html";
+} else {
+    $processor = new redirectTester(ifset($_POST, 'find'), ifset($_POST, 'replace'));
+    $processor->curlSetup(ifset($_POST, 'proxy'), ifset($_POST, 'user'), ifset($_POST, 'password'));
+    $processor->processCSVFile($_FILES['csv_input']['tmp_name']);
+
+    $output = new rtOutput($processor);
+    $output->generate();
 }
 
 ?>

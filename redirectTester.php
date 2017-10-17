@@ -155,13 +155,3 @@ class redirectTester
         return $url;
     }
 }
-
-function main_processor() {
-    $processor = new redirectTester(ifset($_POST, 'find'), ifset($_POST, 'replace'));
-    $processor->curlSetup(ifset($_POST, 'proxy'), ifset($_POST, 'user'), ifset($_POST, 'password'));
-    $processor->processCSVFile($_FILES['csv_input']['tmp_name']);
-
-    $output = new rtOutput($processor);
-    $output->generate();
-}
-
