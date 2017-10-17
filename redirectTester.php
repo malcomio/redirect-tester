@@ -6,8 +6,8 @@ class redirectTester
     private $curl = null;
     private $proxy = '';
 
-    private $find = '';
-    private $replace = '';
+    public $find = '';
+    public $replace = '';
 
     public $results = [];
 
@@ -47,6 +47,16 @@ class redirectTester
                 yield $result;
             }
         }
+    }
+
+    public function getOriginals()
+    {
+        return array_column($this->results, 'original');
+    }
+
+    public function getExpecteds()
+    {
+        return array_column($this->results, 'expected');
     }
 
     public function processCSVFile($filename)
@@ -126,12 +136,12 @@ class redirectTester
         $actual_url = $visit['target'];
         // Deal with multiple redirections.
         while ($visit['http_code'] == HTTP_STATUS_MOVED_PERMANENTLY) {
-          if ($visit['target'] === $actual_url) {   //@todo: I'm really not sure this will ever work?
-            break;
-          }
+            if ($visit['target'] === $actual_url) {   //@todo: I'm really not sure this will ever work?
+                break;
+            }
 
-          $visit = visit_url($curl, $actual_url, $proxy);
-          $actual_url = $visit['target'];
+            $visit = visit_url($curl, $actual_url, $proxy);
+            $actual_url = $visit['target'];
         }
         return $actual_url;
     }
@@ -147,26 +157,51 @@ class redirectTester
 }
 
 function main_processor() {
-    $find = isset($_POST['find']) ? $_POST['find'] : '';
-
     $processor = new redirectTester(ifset($_POST, 'find'), ifset($_POST, 'replace'));
     $processor->curlSetup(ifset($_POST, 'proxy'), ifset($_POST, 'user'), ifset($_POST, 'password'));
     $processor->processCSVFile($_FILES['csv_input']['tmp_name']);
 
+    $duplicate_originals = array_filter(array_count_values($processor->getOriginals()), 'more_than_1'); //@todo: replace more_than_1 with inline function.
 
-    $originals = array_column($processor->results, 'original');
-    $expecteds = array_column($processor->results, 'expected');
+    $invalid_originals = array_filter($processor->getOriginals(), 'invalid_url');
+    $invalid_expecteds = array_filter($processor->getExpecteds(), 'invalid_url');
 
-    $duplicate_originals = array_filter(array_count_values($originals), 'more_than_1');
+    $navigation_markup = generateNavigation($processor, $duplicate_originals, $invalid_originals, $invalid_expecteds);
 
-    $invalid_originals = array_filter(array_column($processor->results, 'original'), 'invalid_url');
-    $invalid_expecteds = array_filter(array_column($processor->results, 'expected'), 'invalid_url');
+    if ($processor->resultsCount) {
+        outputSummaryTable($processor);
 
-    $back_to_top_link = '<a href="#">Back to top</a>';
+        if ($processor->find) {
+            outputFindAndReplace($processor);
+        }
+    }
 
-    ?>
+    outputButtons($navigation_markup, $processor);
 
-  <?php if ($processor->resultsCount) : ?>
+    if (!empty($duplicate_originals)) {
+        outputDuplicateOriginals($navigation_markup, $processor, $duplicate_originals);
+    }
+
+    if (!empty($invalid_originals)) {
+        outputInvalidOriginals($navigation_markup, $processor, $invalid_originals);
+    }
+
+    if (!empty($invalid_expecteds)) {
+        outputInvalidExpected($navigation_markup, $processor, $invalid_expecteds);
+    }
+
+    if ($processor->failureCount) {
+        outputFailures($navigation_markup, $processor);
+    }
+
+    if ($processor->successCount) {
+        outputSuccesses($navigation_markup, $processor);
+    }
+}
+
+function outputSummaryTable($processor)
+{
+?>
     <div class="panel panel-default" id="summary">
       <div class="panel-heading">
         <h3 class="panel-title">Summary</h3>
@@ -210,8 +245,12 @@ function main_processor() {
         </tbody>
       </table>
     </div>
+<?php
+}
 
-    <?php if (!empty($find)): ?>
+function outputFindAndReplace($processor)
+{
+?>
       <div class="panel panel-default" id="find-replace">
         <div class="panel-heading">
           <h3 class="panel-title">Find and replace</h3>
@@ -223,15 +262,18 @@ function main_processor() {
           </thead>
           <tbody>
             <tr>
-              <td><?php print $find; ?></td>
-              <td><?php print $replace; ?></td>
+              <td><?php print $processor->find; ?></td>
+              <td><?php print $processor->replace; ?></td>
             </tr>
           </tbody>
         </table>
       </div>
-    <?php endif; ?>
+<?php    
+}
 
-  <?php endif; ?>
+function outputButtons($navigation_markup, $processor)
+{
+?>
   <p>
     <a href="index.php" class="btn btn-success">Start again</a>
   </p>
@@ -243,39 +285,48 @@ function main_processor() {
     <input type="submit" class="btn" value="Output as CSV"/>
   </form>
 
+  <?php print $navigation_markup; ?>
+
   <?php
-  $navigation = array($back_to_top_link);
+}
 
-  if (!empty($duplicate_originals)) {
-    $navigation[] = '<a href="#error-duplicates">Duplicate originals</a>';
-  }
+function generateNavigation($processor, $duplicate_originals, $invalid_originals, $invalid_expecteds)
+{
+    $back_to_top_link = '<a href="#">Back to top</a>';
+    $navigation = array($back_to_top_link);
 
-  if (!empty($invalid_originals)) {
-    $navigation[] = '<a href="#error-invalid-original">Invalid original URLs</a>';
-  }
+    if (!empty($duplicate_originals)) {
+        $navigation[] = '<a href="#error-duplicates">Duplicate originals</a>';
+    }
 
-  if (!empty($invalid_expecteds)) {
-    $navigation[] = '<a href="#error-invalid-expected">Invalid expected URLs</a>';
-  }
+    if (!empty($invalid_originals)) {
+        $navigation[] = '<a href="#error-invalid-original">Invalid original URLs</a>';
+    }
 
-  if ($processor->failureCount) {
-    $navigation[] = '<a href="#errors">Errors</a>';
-  }
+    if (!empty($invalid_expecteds)) {
+        $navigation[] = '<a href="#error-invalid-expected">Invalid expected URLs</a>';
+    }
 
-  if ($processor->successCount) {
-    $navigation[] = '<a href="#successes">Successes</a>';
-  }
+    if ($processor->failureCount) {
+        $navigation[] = '<a href="#errors">Errors</a>';
+    }
 
-  $navigation_markup = '<ul>';
-  foreach ($navigation as $link) {
-    $navigation_markup .= '<li>' . $link . '</li>';
-  }
-  $navigation_markup .= '</ul>';
+    if ($processor->successCount) {
+        $navigation[] = '<a href="#successes">Successes</a>';
+    }
 
-  print $navigation_markup;
-  ?>
+    $navigation_markup = '<ul>';
+    foreach ($navigation as $link) {
+        $navigation_markup .= '<li>' . $link . '</li>';
+    }
+    $navigation_markup .= '</ul>';
 
-  <?php if (!empty($duplicate_originals)): ?>
+    return $navigation_markup;
+}
+
+function outputDuplicateOriginals($navigation_markup, $processor, $duplicate_originals)
+{
+?>
     <div class="alert alert-warning" role="alert" id="error-duplicates">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
@@ -286,7 +337,7 @@ function main_processor() {
             <?php print $original . ' : ' . $count . ' instances'; ?>
             <ul>
               <?php
-              $instances = array_keys($originals, $original);
+              $instances = array_keys($processor->getOriginals(), $original);
               foreach ($instances as $instance) {
                 print '<li>Row ' . $processor->results[$instance]['row'] . '</li>';
               }
@@ -297,9 +348,12 @@ function main_processor() {
       </ul>
     </div>
     <?php print $navigation_markup; ?>
-  <?php endif; ?>
+<?php
+}
 
-  <?php if (!empty($invalid_originals)): ?>
+function outputInvalidOriginals($navigation_markup, $processor, $invalid_originals)
+{
+?>
     <div class="alert alert-danger" role="alert" id="error-invalid-original">
       <span class="glyphicon glyphicon-exclamation-sign"
             aria-hidden="true"></span>
@@ -318,9 +372,12 @@ function main_processor() {
       </ul>
     </div>
     <?php print $navigation_markup; ?>
-  <?php endif; ?>
+<?php
+}
 
-  <?php if (!empty($invalid_expecteds)): ?>
+function outputInvalidExpected($navigation_markup, $processor, $invalid_expecteds)
+{
+?>
     <div class="alert alert-danger" role="alert" id="error-invalid-expected">
       <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
@@ -338,9 +395,12 @@ function main_processor() {
       </ul>
     </div>
     <?php print $navigation_markup; ?>
-  <?php endif; ?>
+<?php
+}
 
-  <?php if ($processor->failureCount): ?>
+function outputFailures($navigation_markup, $processor)
+{
+?>
     <div class="panel panel-default" id="errors">
       <div class="panel-heading">
         <h3 class="panel-title">Errors</h3>
@@ -367,9 +427,12 @@ function main_processor() {
       </table>
     </div>
     <?php print $navigation_markup; ?>
-  <?php endif; ?>
+<?php
+}
 
-  <?php if ($processor->successCount): ?>
+function outputSuccesses($navigation_markup, $processor)
+{
+?>
     <div class="panel panel-default" id="successes">
       <div class="panel-heading">
         <h3 class="panel-title">Successes</h3>
@@ -396,6 +459,5 @@ function main_processor() {
       </table>
     </div>
     <?php print $navigation_markup; ?>
-  <?php endif; ?>
 <?php
 }
