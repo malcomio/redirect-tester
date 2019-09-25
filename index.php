@@ -213,7 +213,7 @@ $form = '<form method="post" enctype="multipart/form-data">
 <div class="form-group">
   <label for="find">Find</label>
   <input type="text" name="find"/>
-  <label for="replace">Find</label>
+  <label for="replace">Replace</label>
   <input type="text" name="replace"/>
 </div>
 <div class="form-group">
@@ -222,7 +222,7 @@ $form = '<form method="post" enctype="multipart/form-data">
           <p>See <a href="example.csv">the example CSV file</a> for the expected format</p>
           </div>
 
-        <input type="submit" class="btn"/>
+        <input type="submit" class="btn btn-success"/>
 </div>
 </div>
       </form>';
