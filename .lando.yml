@@ -1,0 +1,4 @@
+name: redirect-tester
+recipe: lamp
+config:
+  webroot: .
