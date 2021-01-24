@@ -25,10 +25,10 @@ if (!empty($_POST['csv_output'])) {
   die();
 }
 
-include "template_top.html";
+include 'template_top.html';
 
 if (!array_key_exists('csv_input', $_FILES)) {
-    include "form.html";
+    include 'form.html';
 } else {
     $processor = new redirectTester(ifset($_POST, 'find'), ifset($_POST, 'replace'));
     $processor->curlSetup(ifset($_POST, 'proxy'), ifset($_POST, 'user'), ifset($_POST, 'password'));
