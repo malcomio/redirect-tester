@@ -38,7 +38,4 @@ if (!array_key_exists('csv_input', $_FILES)) {
     $output->generate();
 }
 
-?>
-</div>
-</body>
-</html>
+include 'template_bottom.html';
